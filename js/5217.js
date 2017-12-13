@@ -35,12 +35,14 @@ var breakMessages = ["have a cup of tea!", "put your feet up!", "take a deep bre
 var notificationTitle = {
   "break": "Time for a break",
   "work": "Keep working!",
+  "paused": "Paused",
   "unpaused": "Unpaused"
 };
 var notificationBody = {
   "break": " minutes left - ",
   "work": " minutes left in this cycle",
-  "unpaused": " minutes paused.  Back to it!"
+  "unpaused": " minutes paused.  Back to it!",
+  "paused": "Timer paused! Unpause soon to keep up your productivity"
 }
 
 var chosenBreakMessage;
@@ -92,31 +94,31 @@ playPause2Element.addEventListener("click", togglePlayPause);
 */
 
 function togglePlayPause() {
-  icon = {'play_arrow': 'pause', 'pause': 'play_arrow'};
+  const icon = {'play_arrow': 'pause', 'pause': 'play_arrow'};
 
-  which = !isPaused ? "pause" : "play_arrow";
+  var which = !isPaused ? "pause" : "play_arrow";
   console.log("playPause value: " + which);
 
   playPause1IconElement.innerHTML = icon[which]
   playPause2IconElement.innerHTML = icon[which]
 
-    if (which == "pause") {
-        playPause1Element.classList.remove("pulseStart");
-        playPause2Element.classList.remove("pulseStart");
+  if (which == "pause") {
+    notify("paused", 0);
+    playPause1Element.classList.remove("pulseStart");
+    playPause2Element.classList.remove("pulseStart");
 
-        startPauseTimeStamp = getCurrentTime();
-    } else {
-        timeDiff = getCurrentTime() - startPauseTimeStamp;
-        notify("unpaused", Math.floor(timeDiff / second));
+    startPauseTimeStamp = getCurrentTime();
+  } else {
+    timeDiff = getCurrentTime() - startPauseTimeStamp;
+    notify("unpaused", Math.floor(timeDiff / second));
+    endTime = endTime + timeDiff;
 
-        endTime = endTime + timeDiff;
+    playPause1Element.classList.add("pulseStart");
+    playPause2Element.classList.add("pulseStart");
+  }
 
-        playPause1Element.classList.add("pulseStart");
-        playPause2Element.classList.add("pulseStart");
-    }
-
-    isPaused = !isPaused;
-    updatePauseTitle();
+  isPaused = !isPaused;
+  updatePauseTitle();
 }
 
 function startTimer() {
@@ -481,11 +483,18 @@ function showNotification(type, title, body) {
 }
 
 function getNotificationBody(type, remainingMinutes) {
-  if (type === "break") {
-    return remainingMinutes + notificationBody[type] + chooseBreakMessage();
-  } else if (type === "work") {
-    return remainingMinutes + notificationBody[type];
-  } else if (type === "unpaused") {
-    return remainingMinutes + notificationBody[type];
+  var body;
+
+  switch (type) {
+    case "break":
+      body = remainingMinutes + notificationBody[type] + chooseBreakMessage();
+      break;
+    case "work":
+    case "unpaused":
+      body = remainingMinutes + notificationBody[type];
+      break;
+    case "paused":
+      body = notificationBody[type];
   }
+  return body;
 }
