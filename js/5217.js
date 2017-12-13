@@ -21,6 +21,7 @@ const originalTitle = document.title;
 
 var startTimeStamp;
 var endTimeStamp;
+var startPauseTimeStamp;
 var minutesAwayStamp;
 var currentTimeStamp;
 var placeHolderTime;
@@ -34,10 +35,12 @@ var breakMessages = ["have a cup of tea!", "put your feet up!", "take a deep bre
 var notificationTitle = {
   "break": "Time for a break",
   "work": "Keep working!",
+  "unpaused": "Unpaused"
 };
 var notificationBody = {
   "break": " minutes left - ",
   "work": " minutes left in this cycle",
+  "unpaused": " minutes paused.  Back to it!"
 }
 
 var chosenBreakMessage;
@@ -46,6 +49,7 @@ var minutesAwayRounded = worktime;
 var frontLayer = "2";
 var backLayer = "1";
 var timerRunning = false;
+var isPaused = false;
 
 /*
   Elements
@@ -55,10 +59,10 @@ var timerFab1Element = document.getElementById("timerfab1");
 var resetButton1Element = document.getElementById("resetButton1");
 var timerFab2Element = document.getElementById("timerfab2");
 var resetButton2Element = document.getElementById("resetButton2");
-var pulsingDot1Element = document.getElementById("pulsingDot1");
-var pulsingDot1ContainerElement = document.getElementById("pulsingDotContainer1");
-var pulsingDot2Element = document.getElementById("pulsingDot2");
-var pulsingDot2ContainerElement = document.getElementById("pulsingDotContainer2");
+var playPause1Element = document.getElementById("playPause1");
+var playPause2Element = document.getElementById("playPause2");
+var playPause1IconElement = playPause1Element.firstElementChild;
+var playPause2IconElement = playPause2Element.firstElementChild;
 var hero1Element = document.getElementById("heroNumber1");
 var hero2Element = document.getElementById("heroNumber2");
 var shareFab1Element = document.getElementById("sharefab1");
@@ -80,9 +84,41 @@ timerFab1Element.addEventListener("click", startTimer);
 resetButton1Element.addEventListener("click", reset);
 timerFab2Element.addEventListener("click", startTimer);
 resetButton2Element.addEventListener("click", reset);
+playPause1Element.addEventListener("click", togglePlayPause);
+playPause2Element.addEventListener("click", togglePlayPause);
+
 /*
   Functions
 */
+
+function togglePlayPause() {
+  icon = {'play_arrow': 'pause', 'pause': 'play_arrow'};
+
+  which = !isPaused ? "pause" : "play_arrow";
+  console.log("playPause value: " + which);
+
+  playPause1IconElement.innerHTML = icon[which]
+  playPause2IconElement.innerHTML = icon[which]
+
+    if (which == "pause") {
+        playPause1Element.classList.remove("pulseStart");
+        playPause2Element.classList.remove("pulseStart");
+
+        startPauseTimeStamp = getCurrentTime();
+    } else {
+        timeDiff = getCurrentTime() - startPauseTimeStamp;
+        notify("unpaused", Math.floor(timeDiff / second));
+
+        endTime = endTime + timeDiff;
+
+        playPause1Element.classList.add("pulseStart");
+        playPause2Element.classList.add("pulseStart");
+    }
+
+    isPaused = !isPaused;
+    updatePauseTitle();
+}
+
 function startTimer() {
   currentCycle = "work";
   timerRunning = true;
@@ -93,6 +129,10 @@ function startTimer() {
     /* Animate FAB out */
     timerFab1Element.classList.add("hide");
     timerFab2Element.classList.add("hide");
+
+    /* Animate Pulsing Dot in */
+    playPause1Element.classList.add("pulseStart");
+    playPause2Element.classList.add("pulseStart");
   }, 200);
 
   resetButton1Element.classList.remove("inactive-element");
@@ -107,14 +147,16 @@ function startTimer() {
   timerFab2Element.classList.add("hide-fab");
   timerFab2Element.classList.remove("show-fab");
 
-  /* Animate Pulsing Dot in */
-  pulsingDot1Element.classList.remove("hide");
-  pulsingDot1Element.classList.add("show-dot");
-  pulsingDot1ContainerElement.classList.add("pulseStart");
+  isPaused = false;
 
-  pulsingDot2Element.classList.remove("hide");
-  pulsingDot2Element.classList.add("show-dot");
-  pulsingDot2ContainerElement.classList.add("pulseStart");
+  playPause1IconElement.innerHTML = "pause";
+  playPause2IconElement.innerHTML = "pause";
+
+  playPause1Element.classList.remove("hide");
+  playPause2Element.classList.remove("hide");
+
+  playPause1Element.style.zIndex = 1001;
+  playPause2Element.style.zIndex = 1001;
 
   var x = setInterval(function() {
     if (!timerRunning) {
@@ -125,6 +167,8 @@ function startTimer() {
       clearInterval(x);
       return;
     }
+
+    if (isPaused) return;
 
     getCurrentTime();
     getMinutesAway(currentTime, endTime);
@@ -155,7 +199,6 @@ function startNewType() {
 }
 
 function reset() {
-
   if (timerRunning !== true) return;
 
   resetButton1Element.classList.remove("active-element");
@@ -186,10 +229,14 @@ function reset() {
     timerFab1Element.classList.add("show-fab");
     timerFab2Element.classList.add("show-fab");
   }
-  if (!pulsingDot1Element.classList.contains("hide") || !pulsingDot2Element.classList.contains("hide")) {
-    pulsingDot1Element.classList.add("hide");
-    pulsingDot2Element.classList.add("hide");
-  }
+
+  playPause1Element.classList.add("hide");
+  playPause2Element.classList.add("hide");
+  playPause1Element.classList.remove("pulseStart");
+  playPause2Element.classList.remove("pulseStart");
+
+  playPause1Element.style.zIndex = -1;
+  playPause2Element.style.zIndex = -1;
 
   setTheme("work");
 
@@ -375,6 +422,14 @@ function updateTitle(cycleType) {
   }
 }
 
+function updatePauseTitle() {
+    if (isPaused) {
+        document.title = `[paused] ${document.title}`;
+    } else {
+      updateTitle(currentCycle);
+    }
+}
+
 /* Break Message Code */
 function chooseBreakMessage() {
   return breakMessages[Math.floor(Math.random() * breakMessages.length)];
@@ -434,4 +489,3 @@ function getNotificationBody(type, remainingMinutes) {
     return remainingMinutes + notificationBody[type];
   }
 }
-
