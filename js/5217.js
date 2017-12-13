@@ -8,7 +8,8 @@
   Constants
 */
 
-const second = 60000;
+const minute = 60000;
+const pauseNotifyMinutesInterval = 5;
 
 const worktime = 52;
 const breaktime = 17;
@@ -36,14 +37,16 @@ var notificationTitle = {
   "break": "Time for a break",
   "work": "Keep working!",
   "pause": "Timer paused!",
-  "resume": "Timer resumed"
+  "resume": "Timer resumed",
+  "still_paused": "Still paused"
 };
 var notificationBody = {
-  "break": " minutes left - ",
-  "work": " minutes left in this cycle",
+  "break": "_MINS_ left - ",
+  "work": "_MINS_ left in this cycle",
   "pause": "Resume soon to keep up your productivity",
-  "resume": " minutes paused.  Back to it!",
-  "resume_0m": "Less than a minute paused"
+  "resume": "_MINS_ paused total.  Back to it!",
+  "resume_0m": "Less than a minute paused",
+  "still_paused": "_MINS_ paused so far!"
 }
 
 var chosenBreakMessage;
@@ -53,6 +56,7 @@ var frontLayer = "2";
 var backLayer = "1";
 var timerRunning = false;
 var isPaused = false;
+var pauseNotifyIntervalLast = 0;
 
 /*
   Elements
@@ -106,10 +110,11 @@ function togglePlayPause() {
     playPause1Element.classList.remove("pulseStart");
     playPause2Element.classList.remove("pulseStart");
 
+    pauseNotifyIntervalLast = 0;
     startPauseTimeStamp = getCurrentTime();
   } else {
-    timeDiff = getCurrentTime() - startPauseTimeStamp;
-    notify("resume", Math.floor(timeDiff / second));
+    var timeDiff = getCurrentTime() - startPauseTimeStamp;
+    notify("resume", Math.floor(timeDiff / minute));
     endTime = endTime + timeDiff;
 
     playPause1Element.classList.add("pulseStart");
@@ -150,23 +155,23 @@ function startTimer() {
   playPause2IconElement.innerHTML = "pause";
 
   setTimeout(function() {
-      playPause1Element.classList.remove("hide-fab");
-      playPause2Element.classList.remove("hide-fab");
+    playPause1Element.classList.remove("hide-fab");
+    playPause2Element.classList.remove("hide-fab");
 
-      playPause1Element.style.zIndex = 1001;
-      playPause2Element.style.zIndex = 1001;
+    playPause1Element.style.zIndex = 1001;
+    playPause2Element.style.zIndex = 1001;
 
-      playPause1Element.classList.add("show-fab");
-      playPause2Element.classList.add("show-fab");
+    playPause1Element.classList.add("show-fab");
+    playPause2Element.classList.add("show-fab");
 
-      setTimeout(function() {
-          /* Animate Pulsing Dot in */
-          playPause1Element.classList.remove("show-fab");
-          playPause2Element.classList.remove("show-fab");
+    setTimeout(function() {
+      /* Animate Pulsing Dot in */
+      playPause1Element.classList.remove("show-fab");
+      playPause2Element.classList.remove("show-fab");
 
-          playPause1Element.classList.add("pulseStart");
-          playPause2Element.classList.add("pulseStart");
-      }, 1200);
+      playPause1Element.classList.add("pulseStart");
+      playPause2Element.classList.add("pulseStart");
+    }, 1200);
   }, 400);
 
   var x = setInterval(function() {
@@ -179,7 +184,10 @@ function startTimer() {
       return;
     }
 
-    if (isPaused) return;
+    if (isPaused) {
+      checkPauseIntervals();
+      return;
+    }
 
     getCurrentTime();
     getMinutesAway(currentTime, endTime);
@@ -320,17 +328,17 @@ function getCurrentTime() {
 
 function getEndTime(cycleType) {
   if (cycleType === "work") {
-    endTime = new Date(startTime + (worktime * second)).getTime();
+    endTime = new Date(startTime + (worktime * minute)).getTime();
     placeHolderTime = worktime;
   } else if (cycleType === "break") {
-    endTime = new Date(startTime + (breaktime * second)).getTime();
+    endTime = new Date(startTime + (breaktime * minute)).getTime();
     placeHolderTime = breaktime;
   }
   return endTime;
 }
 
 function getMinutesAway(now, finish) {
-  minutesAway = (finish - now) / second;
+  minutesAway = (finish - now) / minute;
   minutesAwayRounded = Math.ceil(minutesAway);
   return minutesAwayRounded;
 }
@@ -472,26 +480,49 @@ function showNotification(type, title, body) {
   }
 }
 
-function getNotificationBody(type, remainingMinutes) {
+function getNotificationBody(type, minutes) {
   var body;
 
   switch (type) {
     case "break":
-      body = remainingMinutes + notificationBody[type] + chooseBreakMessage();
+      body = addMinutes(minutes, notificationBody[type]) + chooseBreakMessage();
       break;
     case "work":
-        body = remainingMinutes + notificationBody[type];
-        break;
+    case "pause":
+    case "still_paused":
+      body = addMinutes(minutes, notificationBody[type]);
+      break;
     case "resume":
-      if (remainingMinutes == 0) {
+      if (minutes == 0) {
         body = notificationBody["resume_0m"]
       } else {
-        body = remainingMinutes + notificationBody[type];
+        body = addMinutes(minutes, notificationBody[type]);
       }
-
-      break;
-    case "pause":
-      body = notificationBody[type];
   }
   return body;
+}
+
+function maybePluralizeMinutes(num) {
+    var str = num + " minute";
+    if (num != 1) {
+        str += "s";
+    }
+    return str;
+}
+
+function addMinutes(num, str) {
+    return str.replace("_MINS_", maybePluralizeMinutes(num))
+}
+
+function checkPauseIntervals() {
+    // Divide the amount of time paused by 5m and round down
+    // If this amount is greater than 'notify interval last'
+    // Another chunk of 5 mins has gone by and we can notify the user
+
+    var timeDiff = getCurrentTime() - startPauseTimeStamp;
+    var pauseChunkOfTime = Math.floor(timeDiff / (pauseNotifyMinutesInterval * minute));
+    if (pauseChunkOfTime > pauseNotifyIntervalLast && pauseChunkOfTime > 0) {
+        pauseNotifyIntervalLast = pauseChunkOfTime;
+        notify("still_paused", pauseChunkOfTime * pauseNotifyMinutesInterval);
+    }
 }
