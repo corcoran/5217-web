@@ -129,10 +129,6 @@ function startTimer() {
     /* Animate FAB out */
     timerFab1Element.classList.add("hide");
     timerFab2Element.classList.add("hide");
-
-    /* Animate Pulsing Dot in */
-    playPause1Element.classList.add("pulseStart");
-    playPause2Element.classList.add("pulseStart");
   }, 200);
 
   resetButton1Element.classList.remove("inactive-element");
@@ -152,11 +148,25 @@ function startTimer() {
   playPause1IconElement.innerHTML = "pause";
   playPause2IconElement.innerHTML = "pause";
 
-  playPause1Element.classList.remove("hide");
-  playPause2Element.classList.remove("hide");
+  setTimeout(function() {
+      playPause1Element.classList.remove("hide-fab");
+      playPause2Element.classList.remove("hide-fab");
 
-  playPause1Element.style.zIndex = 1001;
-  playPause2Element.style.zIndex = 1001;
+      playPause1Element.style.zIndex = 1001;
+      playPause2Element.style.zIndex = 1001;
+
+      playPause1Element.classList.add("show-fab");
+      playPause2Element.classList.add("show-fab");
+
+      setTimeout(function() {
+          /* Animate Pulsing Dot in */
+          playPause1Element.classList.remove("show-fab");
+          playPause2Element.classList.remove("show-fab");
+
+          playPause1Element.classList.add("pulseStart");
+          playPause2Element.classList.add("pulseStart");
+      }, 1200);
+  }, 400);
 
   var x = setInterval(function() {
     if (!timerRunning) {
@@ -227,8 +237,8 @@ function reset() {
     timerFab2Element.classList.add("show-fab");
   }
 
-  playPause1Element.classList.add("hide");
-  playPause2Element.classList.add("hide");
+  playPause1Element.classList.add("hide-fab");
+  playPause2Element.classList.add("hide-fab");
   playPause1Element.classList.remove("pulseStart");
   playPause2Element.classList.remove("pulseStart");
 
