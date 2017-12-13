@@ -35,14 +35,15 @@ var breakMessages = ["have a cup of tea!", "put your feet up!", "take a deep bre
 var notificationTitle = {
   "break": "Time for a break",
   "work": "Keep working!",
-  "paused": "Paused",
-  "unpaused": "Unpaused"
+  "pause": "Timer paused!",
+  "resume": "Timer resumed"
 };
 var notificationBody = {
   "break": " minutes left - ",
   "work": " minutes left in this cycle",
-  "unpaused": " minutes paused.  Back to it!",
-  "paused": "Timer paused! Unpause soon to keep up your productivity"
+  "pause": "Resume soon to keep up your productivity",
+  "resume": " minutes paused.  Back to it!",
+  "resume_0m": "Less than a minute paused"
 }
 
 var chosenBreakMessage;
@@ -101,14 +102,14 @@ function togglePlayPause() {
   playPause2IconElement.innerHTML = icon[which]
 
   if (which == "pause") {
-    notify("paused", 0);
+    notify("pause", 0);
     playPause1Element.classList.remove("pulseStart");
     playPause2Element.classList.remove("pulseStart");
 
     startPauseTimeStamp = getCurrentTime();
   } else {
     timeDiff = getCurrentTime() - startPauseTimeStamp;
-    notify("unpaused", Math.floor(timeDiff / second));
+    notify("resume", Math.floor(timeDiff / second));
     endTime = endTime + timeDiff;
 
     playPause1Element.classList.add("pulseStart");
@@ -479,10 +480,17 @@ function getNotificationBody(type, remainingMinutes) {
       body = remainingMinutes + notificationBody[type] + chooseBreakMessage();
       break;
     case "work":
-    case "unpaused":
-      body = remainingMinutes + notificationBody[type];
+        body = remainingMinutes + notificationBody[type];
+        break;
+    case "resume":
+      if (remainingMinutes == 0) {
+        body = notificationBody["resume_0m"]
+      } else {
+        body = remainingMinutes + notificationBody[type];
+      }
+
       break;
-    case "paused":
+    case "pause":
       body = notificationBody[type];
   }
   return body;
