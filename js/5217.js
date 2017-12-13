@@ -67,8 +67,6 @@ var playPause1IconElement = playPause1Element.firstElementChild;
 var playPause2IconElement = playPause2Element.firstElementChild;
 var hero1Element = document.getElementById("heroNumber1");
 var hero2Element = document.getElementById("heroNumber2");
-var shareFab1Element = document.getElementById("sharefab1");
-var shareFab2Element = document.getElementById("sharefab2");
 var moreButton1Element = document.getElementById("moreButton1");
 var moreButton2Element = document.getElementById("moreButton2");
 var layer1DivElement = document.getElementById("layer1div");
@@ -221,9 +219,6 @@ function reset() {
 
   updateTitle(null);
 
-  shareFab1Element.classList.add("hide-fab");
-  shareFab2Element.classList.add("hide-fab");
-
   timerFab1Element.classList.remove("hide-fab", "hide");
   timerFab2Element.classList.remove("hide-fab", "hide");
 
@@ -257,14 +252,6 @@ function setTheme(cycleType) {
     moreButton2Element.style.color = "#ffffff";
     layer2DivElement.style.backgroundColor = "#237aff";
     layer1DivElement.style.backgroundColor = "#237aff";
-    if (shareFab1Element.classList.contains("show-fab") || shareFab2Element.classList.contains("show-fab")) {
-      shareFab1Element.classList.add("hide-fab");
-      shareFab1Element.classList.add("hide");
-      shareFab2Element.classList.add("hide-fab");
-      shareFab2Element.classList.add("hide");
-      shareFab1Element.classList.remove("show-fab");
-      shareFab2Element.classList.remove("show-fab");
-    }
   }
   if (cycleType === "break") {
     chosenBreakMessage = "Time for a break!" + "<br>" + capitalizeFirstLetter(chooseBreakMessage());
@@ -280,14 +267,6 @@ function setTheme(cycleType) {
     moreButton2Element.style.color = "#237aff";
     layer2DivElement.style.backgroundColor = "#ffffff";
     layer1DivElement.style.backgroundColor = "#ffffff";
-    if (!shareFab1Element.classList.contains("show-fab") || !shareFab2Element.classList.contains("show-fab")) {
-      shareFab1Element.classList.add("show-fab");
-      shareFab2Element.classList.add("show-fab");
-      shareFab1Element.classList.remove("hide-fab");
-      shareFab2Element.classList.remove("hide-fab");
-      shareFab1Element.classList.remove("hide");
-      shareFab2Element.classList.remove("hide");
-    }
     swipeLayer();
   }
 }
